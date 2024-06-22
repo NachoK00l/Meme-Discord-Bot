@@ -163,3 +163,4 @@ cython_debug/
 
 #Private data obfuscation
 config.yml
+config.yml.final

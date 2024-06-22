@@ -3,6 +3,9 @@
 # General bot settings
 token: YOUR_BOT_TOKEN_HERE  # The token for controlling the bot
 botUserId: YOUR_BOT_USER_ID_HERE  # The user id of the bot
+checkHour: 20  # The hour at which the bot will check for new memes (In UTC)
+reactionIcons: {🟢 : 1, 🟡 : 0, 🔴 : -1} #The icons that users can use to vote on the memes. {Icon : Points}
+winnerIcon: 👑 #The icon that will be added to the current winner
 
 # Channels settings
 channels:

@@ -1,0 +1,12 @@
+# Discord Bot Configuration
+
+# General bot settings
+token: YOUR_BOT_TOKEN_HERE  # The token for controlling the bot
+botUserId: YOUR_BOT_USER_ID_HERE  # The user id of the bot
+
+# Channels settings
+channels:
+  memeChannel: YOUR_MEME_CHANNEL_ID_HERE  # The id of the memes channel
+  logsChannel: YOUR_LOGS_CHANNEL_ID_HERE  # The id of the logs channel
+  MOTDChannel: YOUR_MOTD_CHANNEL_ID_HERE  # The id of the channel where the meme of the day will be sent
+  FMOTDChannel: YOUR_FMOTD_CHANNEL_ID_HERE  # The id of the channel where the Facebook meme of the day will be sent

@@ -204,6 +204,10 @@ async def on_message_updated(event):
         if (event.channel_id != config['channels']['memeChannel'] or event.author_id == config['botUserId']):
             return
         
+        if (event.message.content == hikari.UNDEFINED):
+            logger.info(f"Message embed was added and ignored.")
+            return
+        
         message_folder = os.path.normpath(os.path.join(meme_folder, str(event.message_id)))
 
         if not os.path.exists(message_folder):

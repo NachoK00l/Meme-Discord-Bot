@@ -81,7 +81,7 @@ async def restart(reason=None):
     os.system(f"python -OO {__file__}")
     exit()
 
-async def sendAsUser(userId, message, channelId, attachments=None, embed=None):
+async def sendAsUser(userId, message, channelId, attachments=None):
     user = await bot.rest.fetch_user(user=userId)
 
     webhook = await bot.rest.create_webhook(
@@ -96,8 +96,7 @@ async def sendAsUser(userId, message, channelId, attachments=None, embed=None):
         content=message,
         username=user.username,
         avatar_url=user.avatar_url,
-        attachments=attachments if attachments else None,
-        embed=embed if embed else None
+        attachments=attachments if attachments else None
     )
 
     await bot.rest.delete_webhook(webhook)
@@ -141,12 +140,7 @@ async def sendMOTD():
 
     score = winnerData["score"]
 
-    scoreEmbed = hikari.Embed(
-        title="",
-        description=f"Score: {score}"
-    )
-
-    await sendAsUser(winnerData["author"], winnerData["content"], config['MOTDSettings']['channelId'], attachmentFiles, embed=scoreEmbed)
+    await sendAsUser(winnerData["author"], winnerData["content"] + f"\n> Score: {score}", config['MOTDSettings']['channelId'], attachmentFiles)
 
     shutil.rmtree(meme_folder)
 

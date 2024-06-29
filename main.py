@@ -140,7 +140,9 @@ async def sendMOTD():
 
     score = winnerData["score"]
 
-    await sendAsUser(winnerData["author"], winnerData["content"] + f"\n> Score: {score}", config['MOTDSettings']['channelId'], attachmentFiles)
+    content = winnerData["content"] if winnerData["content"] else ""
+
+    await sendAsUser(winnerData["author"], content + f"\n> Score: {score}", config['MOTDSettings']['channelId'], attachmentFiles)
 
     shutil.rmtree(meme_folder)
 
@@ -165,7 +167,7 @@ async def on_message_sent(event):
             file_names.append(filename)
             await file.save(os.path.join(message_folder, filename))
 
-        message_info = {"id": event.message_id, "author": event.author.id, "content": event.content, "score": 0, "attachments": file_names}
+        message_info = {"id": event.message_id, "author": event.author.id, "content": event.content if event.content != None else "", "score": 0, "attachments": file_names}
         with open(os.path.join(message_folder, "info.json"), "w") as file:
             json.dump(message_info, file, indent=4)
             logger.info(f"Message {event.message_id} saved to {message_folder} (Info: {message_info})")
@@ -212,7 +214,7 @@ async def on_message_updated(event):
 
         with open(os.path.join(message_folder, "info.json"), "r") as file:
             message_info = json.load(file)
-            message_info["content"] = event.message.content
+            message_info["content"] = event.message.content if event.message.content != None else ""
         
         with open(os.path.join(message_folder, "info.json"), "w") as file:
             json.dump(message_info, file, indent=4)

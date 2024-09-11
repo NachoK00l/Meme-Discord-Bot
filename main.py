@@ -257,11 +257,16 @@ async def on_reaction_added(event: hikari.GuildReactionAddEvent):
                 await bot.rest.delete_reaction(channel=event.channel_id, message=event.message_id, emoji=config['MOTDSettings']['favoriteIcon'], user=event.user_id)
                 return
             
-            favorites[event.user_id] = event.message_id
-
             with open(os.path.join(message_folder, "info.json"), "r") as file:
                 message_info = json.load(file)
-                message_info["score"] += 1
+
+            if event.user_id == message_info["author"]:
+                await bot.rest.delete_reaction(channel=event.channel_id, message=event.message_id, emoji=config['MOTDSettings']['favoriteIcon'], user=event.user_id)
+                return
+            
+            message_info["score"] += 1
+            
+            favorites[event.user_id] = event.message_id
 
             with open(os.path.join(message_folder, "info.json"), "w") as file:
                     json.dump(message_info, file, indent=4)

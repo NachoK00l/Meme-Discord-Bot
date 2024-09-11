@@ -52,6 +52,8 @@ meme_folder = os.path.normpath(os.path.join(script_dir, config['MOTDSettings']['
 if not os.path.exists(meme_folder):
     os.mkdir(meme_folder)
 
+favorites = {}
+
 # Initialize the bot
 bot = lightbulb.BotApp(
     token=config['token'],
@@ -175,6 +177,8 @@ async def on_message_sent(event):
         for emoji in config['MOTDSettings']['reactionIcons']:
             await event.message.add_reaction(emoji[0])
 
+        await event.message.add_reaction(config['MOTDSettings']['favoriteIcon'])
+
 
 
 @bot.listen(hikari.GuildMessageDeleteEvent)
@@ -223,7 +227,7 @@ async def on_message_updated(event):
 
 
 @bot.listen(hikari.GuildReactionAddEvent)
-async def on_reaction_added(event):
+async def on_reaction_added(event: hikari.GuildReactionAddEvent):
     if (config['MOTDSettings']['enabled']):
         if (event.channel_id != config['channels']['memeChannel'] or event.user_id == config['botUserId']):
             return
@@ -244,9 +248,26 @@ async def on_reaction_added(event):
                     json.dump(message_info, file, indent=4)
                     logger.info(f"Message {event.message_id} updated (Info: {message_info})")
                 return
-        
+            
+        if event.is_for_emoji(config['MOTDSettings']['favoriteIcon']):
+            if event.user_id in favorites:
+                await bot.rest.delete_reaction(channel=event.channel_id, message=event.message_id, emoji=config['MOTDSettings']['favoriteIcon'], user=event.user_id)
+                return
+            
+            favorites[event.user_id] = event.message_id
 
-        
+            with open(os.path.join(message_folder, "info.json"), "r") as file:
+                message_info = json.load(file)
+                message_info["score"] += 1
+
+            with open(os.path.join(message_folder, "info.json"), "w") as file:
+                    json.dump(message_info, file, indent=4)
+                    logger.info(f"Message {event.message_id} updated (Info: {message_info})")
+
+            logger.info(f"Message {event.message_id} favorited by {event.user_id}")
+
+
+            
 @bot.listen(hikari.GuildReactionDeleteEvent)
 async def on_reaction_deleted(event):
     if (config['MOTDSettings']['enabled']):
@@ -269,6 +290,20 @@ async def on_reaction_deleted(event):
                     json.dump(message_info, file, indent=4)
                     logger.info(f"Message {event.message_id} updated (Info: {message_info})")
                 return
+            
+        if event.is_for_emoji(config['MOTDSettings']['favoriteIcon']):
+            if event.user_id in favorites:
+                del favorites[event.user_id]
+
+                with open(os.path.join(message_folder, "info.json"), "r") as file:
+                    message_info = json.load(file)
+                    message_info["score"] -= 1
+
+                with open(os.path.join(message_folder, "info.json"), "w") as file:
+                    json.dump(message_info, file, indent=4)
+                    logger.info(f"Message {event.message_id} updated (Info: {message_info})")
+
+                logger.info(f"Message {event.message_id} unfavorited by {event.user_id}")
         
 
     

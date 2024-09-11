@@ -18,6 +18,7 @@ MOTDSettings:
     minute: 1
     second: 0
   reactionIcons: {'🟢' : 1, '🟡' : 0, '🔴' : -1} # The icons that users can use to vote on the memes
+  favoriteIcon: ❤️ #The icon that will be used to favorite a meme
   winnerIcon: 👑 # The icon that will be added to the current winner
   messageFolder: ./memes # The folder where info about messages will be saved
   channelId: YOUR_MOTD_CHANNEL_ID_HERE  # The id of the channel where the meme of the day will be sent

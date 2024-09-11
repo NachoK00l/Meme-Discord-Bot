@@ -150,6 +150,9 @@ async def sendMOTD():
 
     os.mkdir(meme_folder)
 
+    global favorites
+    favorites = {}
+
 
 @bot.listen(hikari.GuildMessageCreateEvent)
 async def on_message_sent(event):

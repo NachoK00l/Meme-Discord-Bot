@@ -7,7 +7,6 @@ import lightbulb
 from lightbulb.ext import tasks
 import json
 import shutil
-from glob import glob
 import random
 
 confirm = False
@@ -29,9 +28,9 @@ class AnsiColorFormatter(logging.Formatter):
         return f"{log_color}{message}{self.RESET}"
 
 class DiscordHandler(logging.Handler):
-    def __init__(self, bot, channel_id):
+    def __init__(self, target_bot, channel_id):
         super().__init__()
-        self.bot = bot
+        self.bot = target_bot
         self.channel_id = channel_id
 
     async def send_log(self, record):
@@ -71,8 +70,8 @@ discord_handler = DiscordHandler(bot, config['channels']['logsChannel'])
 discord_handler.setFormatter(formatter)
 logger.addHandler(discord_handler)
 
-async def restart(reason=None):
-    if reason == None:
+async def restart(reason = None):
+    if reason is None:
         logger.info("Restarting...")
     else:
         logger.info("Restarting... Reason: " + reason)
@@ -84,11 +83,11 @@ async def restart(reason=None):
     os.system(f"python -OO {__file__}")
     exit()
 
-async def sendAsUser(userId, message, channelId, attachments=None):
-    user = await bot.rest.fetch_user(user=userId)
+async def send_as_user(user_id, message, channel_id, attachments=None):
+    user = await bot.rest.fetch_user(user=user_id)
 
     webhook = await bot.rest.create_webhook(
-        channelId,
+        channel_id,
         name=user.username,
         avatar=user.avatar_url
     )
@@ -106,46 +105,46 @@ async def sendAsUser(userId, message, channelId, attachments=None):
 
     logger.info(f"Sent message as user: {user.username}")
 
-async def getWinner():
-    memeInfos = []
+async def get_winner():
+    meme_infos = []
 
     if not os.path.exists(meme_folder):
         logger.warning("Memes folder does not exist!")
-        return
+        return None
     
-    messageIds = [ item for item in os.listdir(meme_folder) if os.path.isdir(os.path.join(meme_folder, item)) ]
+    message_ids = [item for item in os.listdir(meme_folder) if os.path.isdir(os.path.join(meme_folder, item))]
 
-    for messageId in messageIds:
+    for messageId in message_ids:
         with open(os.path.join(meme_folder, messageId, "info.json"), 'r') as f:
-            memeInfo = json.load(f)
-            memeInfo["tiebreaker"] = random.random()
-            memeInfos.append(memeInfo)
+            meme_info = json.load(f)
+            meme_info["tiebreaker"] = random.random()
+            meme_infos.append(meme_info)
 
-    memeInfos.sort(key=lambda x: x["score"] + x["tiebreaker"], reverse=True)
+    meme_infos.sort(key=lambda x: x["score"] + x["tiebreaker"], reverse=True)
 
-    logger.info(json.dumps(memeInfos, indent=4))
+    logger.info(json.dumps(meme_infos, indent=4))
 
-    return memeInfos[0]
+    return meme_infos[0]
 
-async def sendMOTD():
-    winnerData = await getWinner()
+async def send_motd():
+    winner_data = await get_winner()
 
-    winnerFolder = os.path.normpath(os.path.join(meme_folder, str(winnerData["id"])))
+    winner_folder = os.path.normpath(os.path.join(meme_folder, str(winner_data["id"])))
 
-    if not os.path.exists(winnerFolder):
-        logger.warning(f"Winner folder does not exist! (messageInfo: {json.dumps(winnerData, indent=4)})")
+    if not os.path.exists(winner_folder):
+        logger.warning(f"Winner folder does not exist! (messageInfo: {json.dumps(winner_data, indent=4)})")
         return
     
-    attachmentFiles = []
+    attachment_files = []
 
-    for attachment in winnerData["attachments"]:
-        attachmentFiles.append(hikari.File(os.path.join(winnerFolder, attachment), attachment))
+    for attachment in winner_data["attachments"]:
+        attachment_files.append(hikari.File(os.path.join(winner_folder, attachment), attachment))
 
-    score = winnerData["score"]
+    score = winner_data["score"]
 
-    content = winnerData["content"] if winnerData["content"] else ""
+    content = winner_data["content"] if winner_data["content"] else ""
 
-    await sendAsUser(winnerData["author"], content + f"\n> Score: {score}", config['MOTDSettings']['channelId'], attachmentFiles)
+    await send_as_user(winner_data["author"], content + f"\n> Score: {score}", config['MOTDSettings']['channelId'], attachment_files)
 
     shutil.rmtree(meme_folder)
 
@@ -157,8 +156,8 @@ async def sendMOTD():
 
 @bot.listen(hikari.GuildMessageCreateEvent)
 async def on_message_sent(event):
-    if (config['MOTDSettings']['enabled']):
-        if (event.channel_id != config['channels']['memeChannel'] or event.author.id == config['botUserId']):
+    if config['MOTDSettings']['enabled']:
+        if event.channel_id != config['channels']['memeChannel'] or event.author.id == config['botUserId']:
             return
         
         message_folder = os.path.normpath(os.path.join(meme_folder, str(event.message_id)))
@@ -173,7 +172,7 @@ async def on_message_sent(event):
             file_names.append(filename)
             await file.save(os.path.join(message_folder, filename))
 
-        message_info = {"id": event.message_id, "author": event.author.id, "content": event.content if event.content != None else "", "score": 0, "attachments": file_names}
+        message_info = {"id": event.message_id, "author": event.author.id, "content": event.content if event.content is not None else "", "score": 0, "attachments": file_names}
         with open(os.path.join(message_folder, "info.json"), "w") as file:
             json.dump(message_info, file, indent=4)
             logger.info(f"Message {event.message_id} saved to {message_folder} (Info: {message_info})")
@@ -187,8 +186,8 @@ async def on_message_sent(event):
 
 @bot.listen(hikari.GuildMessageDeleteEvent)
 async def on_message_deleted(event):
-    if (config['MOTDSettings']['enabled']):
-        if (event.channel_id != config['channels']['memeChannel']):
+    if config['MOTDSettings']['enabled']:
+        if event.channel_id != config['channels']['memeChannel']:
             return
 
         message_folder = os.path.normpath(os.path.join(meme_folder, str(event.message_id)))
@@ -204,11 +203,11 @@ async def on_message_deleted(event):
 
 @bot.listen(hikari.GuildMessageUpdateEvent)
 async def on_message_updated(event):
-    if (config['MOTDSettings']['enabled']):
-        if (event.channel_id != config['channels']['memeChannel'] or event.author_id == config['botUserId']):
+    if config['MOTDSettings']['enabled']:
+        if event.channel_id != config['channels']['memeChannel'] or event.author_id == config['botUserId']:
             return
         
-        if (event.message.content == hikari.UNDEFINED):
+        if event.message.content == hikari.UNDEFINED:
             logger.info(f"Message embed was added and ignored.")
             return
         
@@ -222,7 +221,7 @@ async def on_message_updated(event):
 
         with open(os.path.join(message_folder, "info.json"), "r") as file:
             message_info = json.load(file)
-            message_info["content"] = event.message.content if event.message.content != None else ""
+            message_info["content"] = event.message.content if event.message.content is not None else ""
         
         with open(os.path.join(message_folder, "info.json"), "w") as file:
             json.dump(message_info, file, indent=4)
@@ -232,8 +231,8 @@ async def on_message_updated(event):
 
 @bot.listen(hikari.GuildReactionAddEvent)
 async def on_reaction_added(event: hikari.GuildReactionAddEvent):
-    if (config['MOTDSettings']['enabled']):
-        if (event.channel_id != config['channels']['memeChannel'] or event.user_id == config['botUserId']):
+    if config['MOTDSettings']['enabled']:
+        if event.channel_id != config['channels']['memeChannel'] or event.user_id == config['botUserId']:
             return
 
         message_folder = os.path.normpath(os.path.join(meme_folder, str(event.message_id)))
@@ -294,8 +293,8 @@ async def on_reaction_added(event: hikari.GuildReactionAddEvent):
             
 @bot.listen(hikari.GuildReactionDeleteEvent)
 async def on_reaction_deleted(event: hikari.GuildReactionDeleteEvent):
-    if (config['MOTDSettings']['enabled']):
-        if (event.channel_id != config['channels']['memeChannel'] or event.user_id == config['botUserId']):
+    if config['MOTDSettings']['enabled']:
+        if event.channel_id != config['channels']['memeChannel'] or event.user_id == config['botUserId']:
             return
 
         message_folder = os.path.normpath(os.path.join(meme_folder, str(event.message_id)))
@@ -400,17 +399,17 @@ async def run_motd_command(ctx: lightbulb.Context):
         await ctx.respond("You do not have permission to use this command.", flags=hikari.MessageFlag.EPHEMERAL)
         return
 
-    await sendMOTD()
+    await send_motd()
 
     await ctx.respond(f"MOTD sent.", flags=hikari.MessageFlag.EPHEMERAL)
 
 
 @tasks.task(tasks.CronTrigger(hour=config['MOTDSettings']['time']['hour'], minute=config['MOTDSettings']['time']['minute'], second=config['MOTDSettings']['time']['second']))
-async def MOTDTrigger():
-    await sendMOTD()
+async def motd_trigger():
+    await send_motd()
 
 if __name__ == "__main__":
-    if (config['MOTDSettings']['enabled']):
-        MOTDTrigger.start()
+    if config['MOTDSettings']['enabled']:
+        motd_trigger.start()
 
     bot.run()
